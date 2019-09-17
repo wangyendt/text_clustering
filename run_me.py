@@ -9,34 +9,37 @@ from copy import copy
 
 import jieba.analyse
 import pandas as pd
+from gensim.models import Word2Vec
+from gensim.models.word2vec import LineSentence
+from sklearn.cluster import KMeans
 
 if __name__ == '__main__':
     pd.set_option('max_colwidth', 1000)
-    # rows = pd.read_excel('sth.xlsx', use_cols=[1, 2], encoding='utf-8')
     with open('mao.txt') as f:
         rows = f.readlines()[0]
-    # rows = rows.astype(str)
-    print(rows)
     segments = []
     stopwords = [line.strip() for line in codecs.open('stopped.txt', 'r', 'utf-8').readlines()]
-    # stopwords = ['习近平','胡锦涛']
-    print(stopwords)
     jieba.analyse.set_stop_words('stopped.txt')
     content = copy(rows)
     words = jieba.cut(content)
     # words = jieba.analyse.textrank(content, topK=30, withWeight=False, allowPOS=('ns', 'n', 'vn', 'v'))
-    splitedStr = ''
+    split_str = ''
     for word in words:
         if word not in stopwords:
             segments.append({'word': word, 'count': 1})
-            splitedStr += word + ' '
+            split_str += word + ' '
 
-    splitedStr = ''
-    for word in words:
-        segments.append({'word': word, 'count': 1})
-        splitedStr += word + ' '
+    with open('split_str.txt', 'w', encoding='utf-8') as f:
+        f.write(split_str)
+    model = Word2Vec(LineSentence('split_str.txt'), size=300, window=5, min_count=3, workers=4)
+    model.wv.save_word2vec_format('word_model.txt', binary=False)
+    words = model.wv.vocab.keys()
 
-    dfSg = pd.DataFrame(segments)
-    dfWord = dfSg.groupby('word')['count'].sum()
-    a = pd.DataFrame({'char': dfWord.index, 'num': dfWord.values})
-    a.to_excel('result.xlsx')
+    # 获取词对于的词向量
+    word_vector = [model[w] for w in words]
+
+    # 聚类
+    clf = KMeans(n_clusters=100)
+    classes = clf.fit_predict(word_vector)
+    for c, w in sorted(zip(classes, words), key=lambda t: t[0]):
+        print(f'{c}: {w}')
