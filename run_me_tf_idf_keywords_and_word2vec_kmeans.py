@@ -21,14 +21,14 @@ from sklearn.manifold import TSNE
 WORD2VEC_SIZE = 300
 NUM_KEYWORDS_PER_DOC = 10
 NUM_CLUSTERS = 10
-KEY_WORD_TFIDF_THD = 0.01
+KEY_WORD_TFIDF_THD = 0.28
 FREQ_THD = 0.00001
 USE_TFIDF = True
 USE_FREQ = True
 
 
 def tsne_plot(data, cls):
-    tsne = TSNE(n_components=2)
+    tsne = TSNE(n_components=2,perplexity=20,learning_rate=100)
     decomposition_data = tsne.fit_transform(data)
 
     x = []

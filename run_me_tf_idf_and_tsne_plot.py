@@ -20,11 +20,11 @@ USE_ELBOW_TO_FIND_BEST_NUM_CLUSTERS = False
 
 if __name__ == '__main__':
     pd.set_option('max_colwidth', 1000)
-    with open('mao2.txt') as f:
+    with open('hefei.txt', encoding='utf-8') as f:
         rows = f.readlines()
 
-    stopwords = [line.strip() for line in codecs.open('stopped.txt', 'r', 'utf-8').readlines()]
-    jieba.analyse.set_stop_words('stopped.txt')
+    stopwords = [line.strip() for line in codecs.open('stopped_words.txt', 'r', 'utf-8').readlines()]
+    jieba.analyse.set_stop_words('stopped_words.txt')
     corpus = []
     for content in rows:
         words = jieba.cut(content)
