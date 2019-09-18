@@ -5,3 +5,4 @@ https://www.cnblogs.com/bincoding/p/8878098.html
 https://github.com/likeyiyy/chinese_text_cluster/blob/master/Cluster/KMeans/kMeans.py
 https://blog.csdn.net/eastmount/article/details/50256163
 http://www.hankcs.com/nlp/part-of-speech-tagging.html
+https://zhuanlan.zhihu.com/p/27330205

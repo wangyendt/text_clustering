@@ -15,7 +15,7 @@ from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
 from sklearn.cluster import KMeans
 
-WORD2VEC_SIZE = 1000
+WORD2VEC_SIZE = 100
 MAX_NUM_WORDS = 20
 NUM_CLUSTERS = 5
 MAX_NUM_CLUSTERS = min(MAX_NUM_WORDS, 20)
