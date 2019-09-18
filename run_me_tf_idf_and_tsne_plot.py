@@ -9,10 +9,7 @@ import codecs
 
 import jieba.analyse
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-from gensim.models import Word2Vec
-from gensim.models.word2vec import LineSentence
 from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.manifold import TSNE

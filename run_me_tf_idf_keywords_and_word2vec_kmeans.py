@@ -4,17 +4,19 @@
 # datetime: 2019/9/16 22:27
 # software: PyCharm
 
-
 import codecs
 import collections
 
 import jieba.analyse
+import jieba.analyse
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
 from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.manifold import TSNE
 
 WORD2VEC_SIZE = 300
 NUM_KEYWORDS_PER_DOC = 5
@@ -23,6 +25,26 @@ KEY_WORD_TFIDF_THD = 0.4
 FREQ_THD = 0.001
 USE_TFIDF = True
 USE_FREQ = True
+
+
+def tsne_plot(data, cls):
+    tsne = TSNE(n_components=2, perplexity=50, learning_rate=10)
+    decomposition_data = tsne.fit_transform(data)
+
+    x = []
+    y = []
+
+    for i in decomposition_data:
+        x.append(i[0])
+        y.append(i[1])
+
+    fig = plt.figure(figsize=(10, 10))
+    ax = plt.axes()
+    plt.scatter(x, y, c=cls.labels_, marker="x")
+    plt.xticks(())
+    plt.yticks(())
+    plt.show()
+
 
 if __name__ == '__main__':
     pd.set_option('max_colwidth', 1000)
@@ -56,6 +78,7 @@ if __name__ == '__main__':
     tfidf_weight = tfidf.toarray()
 
     split_str = ''
+    weight_dict = dict()
     for weight in tfidf_weight:
         loc = np.argsort(-weight)
         for i in range(NUM_KEYWORDS_PER_DOC):
@@ -67,16 +90,16 @@ if __name__ == '__main__':
                 if counter_dict[all_words[loc[i]]] / num_all_words <= FREQ_THD:
                     continue
             split_str += all_words[loc[i]] + ' '
+            weight_dict[all_words[loc[i]]] = weight
         #     print(f'{i + 1}:{all_words[loc[i]], weight[loc[i]]}')
         # print('\n')
-
     with open('split_str.txt', 'w', encoding='utf-8') as f:
         f.write(split_str)
 
     model = Word2Vec(LineSentence('split_str.txt'), size=WORD2VEC_SIZE, window=5, min_count=1, workers=4)
     model.wv.save_word2vec_format('word_model.txt', binary=False)
     word_keys = model.wv.vocab.keys()
-    print(word_keys)
+    print(len(word_keys), word_keys)
 
     # 获取词对于的词向量
     word_vector = [model[w] for w in word_keys]
@@ -84,7 +107,7 @@ if __name__ == '__main__':
     # 聚类
     clf = KMeans(n_clusters=NUM_CLUSTERS)
     classes = clf.fit_predict(word_vector)
-
+    tsne_weight_input = np.array([weight_dict[w] for w in word_keys])
     df = pd.DataFrame(columns=['class', 'word', 'freq'])
     row = 0
     for c, w in sorted(zip(classes, word_keys), key=lambda t: t[0]):
@@ -94,3 +117,5 @@ if __name__ == '__main__':
         row += 1
         # print(f'{c}: {w}, 频数:{counter_dict[w]},频率:{counter_dict[w] / num_all_words}')
     df.to_excel('result.xlsx')
+
+    tsne_plot(tsne_weight_input, clf)
