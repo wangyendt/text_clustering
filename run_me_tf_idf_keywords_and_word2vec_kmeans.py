@@ -19,16 +19,16 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.manifold import TSNE
 
 WORD2VEC_SIZE = 300
-NUM_KEYWORDS_PER_DOC = 5
+NUM_KEYWORDS_PER_DOC = 10
 NUM_CLUSTERS = 10
-KEY_WORD_TFIDF_THD = 0.4
-FREQ_THD = 0.001
+KEY_WORD_TFIDF_THD = 0.01
+FREQ_THD = 0.00001
 USE_TFIDF = True
 USE_FREQ = True
 
 
 def tsne_plot(data, cls):
-    tsne = TSNE(n_components=2, perplexity=50, learning_rate=10)
+    tsne = TSNE(n_components=2)
     decomposition_data = tsne.fit_transform(data)
 
     x = []
@@ -48,16 +48,18 @@ def tsne_plot(data, cls):
 
 if __name__ == '__main__':
     pd.set_option('max_colwidth', 1000)
-    with open('mao2.txt') as f:
+    with open('hefei.txt', encoding='utf-8') as f:
         rows = f.readlines()
 
-    stopwords = [line.strip() for line in codecs.open('stopped.txt', 'r', 'utf-8').readlines()]
-    jieba.analyse.set_stop_words('stopped.txt')
+    stopwords = [line.strip() for line in codecs.open('stopped_words.txt', 'r', 'utf-8').readlines()]
+    jieba.analyse.set_stop_words('stopped_words.txt')
     corpus = []
     whole_words = []
     counter_dict = collections.defaultdict(int)
     num_all_words = 0
-    for content in rows:
+    for r in rows:
+        content = r.strip(' ').replace('\r', '').replace('\n', '')
+        if not content: continue
         whole_words.append([])
         words = jieba.cut(content)
         split_str = ''
