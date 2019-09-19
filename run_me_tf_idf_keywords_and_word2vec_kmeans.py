@@ -18,17 +18,17 @@ from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.manifold import TSNE
 
-WORD2VEC_SIZE = 300
+WORD2VEC_SIZE = 1025
 NUM_KEYWORDS_PER_DOC = 10
-NUM_CLUSTERS = 10
+NUM_CLUSTERS = 8
 KEY_WORD_TFIDF_THD = 0.28
 FREQ_THD = 0.00001
-USE_TFIDF = True
-USE_FREQ = True
+USE_TFIDF = False
+USE_FREQ = False
 
 
 def tsne_plot(data, cls):
-    tsne = TSNE(n_components=2,perplexity=20,learning_rate=100)
+    tsne = TSNE(n_components=2, perplexity=20, learning_rate=100)
     decomposition_data = tsne.fit_transform(data)
 
     x = []
@@ -40,14 +40,20 @@ def tsne_plot(data, cls):
 
     fig = plt.figure(figsize=(10, 10))
     ax = plt.axes()
-    plt.scatter(x, y, c=cls.labels_, marker="x")
+    plt.scatter(x, y, c=cls.labels_, marker="o")
     plt.xticks(())
     plt.yticks(())
     plt.show()
 
 
+def preprocess():
+    with open('three gates', 'r') as f:
+        f.readlines()[0]
+
+
 if __name__ == '__main__':
     pd.set_option('max_colwidth', 1000)
+    np.random.seed(1)
     with open('hefei.txt', encoding='utf-8') as f:
         rows = f.readlines()
 
@@ -62,6 +68,7 @@ if __name__ == '__main__':
         if not content: continue
         whole_words.append([])
         words = jieba.cut(content)
+        # words = jieba.analyse.textrank(content, topK=30, withWeight=False, allowPOS=('ns', 'n', 'vn'))
         split_str = ''
         for word in words:
             if word not in stopwords:
@@ -70,7 +77,6 @@ if __name__ == '__main__':
                 whole_words[-1].append(word)
                 split_str += word + ' '
         corpus.append(split_str)
-    # words = jieba.analyse.textrank(content, topK=30, withWeight=False, allowPOS=('ns', 'n', 'vn', 'v'))
 
     vectorizer = CountVectorizer()
     transformer = TfidfTransformer()
@@ -78,6 +84,8 @@ if __name__ == '__main__':
     all_words = vectorizer.get_feature_names()
     print("word feature length: {}".format(len(all_words)))
     tfidf_weight = tfidf.toarray()
+    # pca = PCA(n_components=100)
+    # tfidf_weight = pca.fit_transform(tfidf_weight)
 
     split_str = ''
     weight_dict = dict()
@@ -98,7 +106,7 @@ if __name__ == '__main__':
     with open('split_str.txt', 'w', encoding='utf-8') as f:
         f.write(split_str)
 
-    model = Word2Vec(LineSentence('split_str.txt'), size=WORD2VEC_SIZE, window=5, min_count=1, workers=4)
+    model = Word2Vec(LineSentence('split_str.txt'), size=WORD2VEC_SIZE, window=5, min_count=1, workers=8)
     model.wv.save_word2vec_format('word_model.txt', binary=False)
     word_keys = model.wv.vocab.keys()
     print(len(word_keys), word_keys)
@@ -118,6 +126,15 @@ if __name__ == '__main__':
         df.loc[row, 'freq'] = counter_dict[w] / num_all_words
         row += 1
         # print(f'{c}: {w}, 频数:{counter_dict[w]},频率:{counter_dict[w] / num_all_words}')
+    save = collections.defaultdict(list)
+    for d in df.iterrows():
+        save[d[1]['class']].append({d[1]['word']: round(d[1]['freq'], 5)})
+    with open('result.txt', 'w') as f:
+        print(save.keys())
+        for k, v in save.items():
+            print(type(k), type(map(str, v)))
+            f.writelines(str(k) + ' ' + ''.join(list(map(str, v))) + '\n')
     df.to_excel('result.xlsx')
+    print(df.head(4))
 
     tsne_plot(tsne_weight_input, clf)
