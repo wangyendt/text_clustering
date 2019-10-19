@@ -6,6 +6,9 @@
 
 import codecs
 import collections
+import functools
+import os
+import time
 
 import jieba.analyse
 import jieba.analyse
@@ -15,16 +18,70 @@ import pandas as pd
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
 from sklearn.cluster import KMeans
+# from sklearn.decomposition import PCA
+from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.manifold import TSNE
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import Normalizer
 
 WORD2VEC_SIZE = 1025
 NUM_KEYWORDS_PER_DOC = 10
 NUM_CLUSTERS = 8
 KEY_WORD_TFIDF_THD = 0.28
 FREQ_THD = 0.00001
-USE_TFIDF = False
+USE_TFIDF = True
 USE_FREQ = False
+MAX_NUM_FEATURES = 100
+
+
+def func_timer(func):
+    """
+    用于计算函数执行时间
+    :param func:
+    :return:
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kw):
+        start = time.time()
+        r = func(*args, **kw)
+        print('%s excute in %.3f s' % (func.__name__, (time.time() - start)))
+        return r
+
+    return wrapper
+
+
+@func_timer
+def add(x, y):
+    return x + y
+
+
+def list_all_files(root: str, keys=[], outliers=[], full_path=False):
+    """
+    列出某个文件下所有文件的全路径
+
+    Author:   wangye
+    Datetime: 2019/4/16 18:03
+
+    :param root: 根目录
+    :param keys: 所有关键字
+    :param outliers: 所有排除关键字
+    :param full_path: 是否返回全路径，True为全路径
+    :return:
+            所有根目录下包含关键字的文件全路径
+    """
+    _files = []
+    _list = os.listdir(root)
+    for i in range(len(_list)):
+        path = os.path.join(root, _list[i])
+        if os.path.isdir(path):
+            _files.extend(list_all_files(path, keys, outliers, full_path))
+        if os.path.isfile(path) \
+                and all([k in path for k in keys]) \
+                and not any([o in path for o in outliers]):
+            _files.append(os.path.abspath(path) if full_path else path)
+    return _files
 
 
 def tsne_plot(data, cls):
@@ -46,24 +103,26 @@ def tsne_plot(data, cls):
     plt.show()
 
 
-def preprocess():
-    with open('three gates', 'r') as f:
-        f.readlines()[0]
-
-
 if __name__ == '__main__':
     pd.set_option('max_colwidth', 1000)
     np.random.seed(1)
-    with open('hefei.txt', encoding='utf-8') as f:
-        rows = f.readlines()
-
-    stopwords = [line.strip() for line in codecs.open('stopped_words.txt', 'r', 'utf-8').readlines()]
-    jieba.analyse.set_stop_words('stopped_words.txt')
+    root = r'data'
+    stop_word_path = r'stopped_words.txt'
+    for file in list_all_files(root, keys=['article']):
+        print(file)
+        with open(file, 'r', encoding='utf-8') as f:
+            rows = f.readlines()
+    # stopwords用set存储，查找效率高于list
+    stopwords = set([line.strip() for line in codecs.open(stop_word_path, 'r', 'utf-8').readlines()])
+    jieba.analyse.set_stop_words(stop_word_path)
     corpus = []
     whole_words = []
     counter_dict = collections.defaultdict(int)
     num_all_words = 0
-    for r in rows:
+    rows = rows[:len(rows) // 2]
+    for ri, r in enumerate(rows):
+        if ri % 1000 == 0:
+            print(ri, len(rows))
         content = r.strip(' ').replace('\r', '').replace('\n', '')
         if not content: continue
         whole_words.append([])
@@ -71,19 +130,28 @@ if __name__ == '__main__':
         # words = jieba.analyse.textrank(content, topK=30, withWeight=False, allowPOS=('ns', 'n', 'vn'))
         split_str = ''
         for word in words:
-            if word not in stopwords:
+            if len(word) > 1 and word not in stopwords and not any([d in word for d in '0123456789']):
                 counter_dict[word] += 1
                 num_all_words += 1
                 whole_words[-1].append(word)
                 split_str += word + ' '
         corpus.append(split_str)
-
     vectorizer = CountVectorizer()
     transformer = TfidfTransformer()
     tfidf = transformer.fit_transform(vectorizer.fit_transform(corpus))
     all_words = vectorizer.get_feature_names()
     print("word feature length: {}".format(len(all_words)))
-    tfidf_weight = tfidf.toarray()
+    svd = TruncatedSVD(MAX_NUM_FEATURES)
+    normalizer = Normalizer(copy=False)
+    lsa = make_pipeline(svd, normalizer)
+    tfidf_weight = lsa.fit_transform(tfidf)
+    print(tfidf_weight.shape)
+
+    # use pca:
+    # tfidf_weight = tfidf.toarray()
+    # pca = PCA(n_components=MAX_NUM_FEATURES)
+    # tfidf_weight = pca.fit_transform(tfidf)
+    # print(tfidf_weight.shape)
     # pca = PCA(n_components=100)
     # tfidf_weight = pca.fit_transform(tfidf_weight)
 
@@ -132,7 +200,7 @@ if __name__ == '__main__':
     with open('result.txt', 'w') as f:
         print(save.keys())
         for k, v in save.items():
-            print(type(k), type(map(str, v)))
+            # print(type(k), type(map(str, v)))
             f.writelines(str(k) + ' ' + ''.join(list(map(str, v))) + '\n')
     df.to_excel('result.xlsx')
     print(df.head(4))
