@@ -8,6 +8,7 @@ import codecs
 import collections
 import functools
 import os
+import random
 import time
 
 import jieba.analyse
@@ -106,8 +107,8 @@ def tsne_plot(data, cls):
 if __name__ == '__main__':
     pd.set_option('max_colwidth', 1000)
     np.random.seed(1)
-    root = r'data'
-    stop_word_path = r'stopped_words.txt'
+    root = r'D:\Code\Github\python\text_clustering\data'
+    stop_word_path = r'D:\Code\Github\python\text_clustering\stopped_words.txt'
     for file in list_all_files(root, keys=['article']):
         print(file)
         with open(file, 'r', encoding='utf-8') as f:
@@ -135,7 +136,11 @@ if __name__ == '__main__':
                 num_all_words += 1
                 whole_words[-1].append(word)
                 split_str += word + ' '
-        corpus.append(split_str)
+        if split_str:
+            corpus.append(split_str)
+
+    # import random
+    # cor = random.sample(corpus, 50000)
     vectorizer = CountVectorizer()
     transformer = TfidfTransformer()
     tfidf = transformer.fit_transform(vectorizer.fit_transform(corpus))
