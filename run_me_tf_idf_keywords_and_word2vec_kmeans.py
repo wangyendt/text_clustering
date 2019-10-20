@@ -109,7 +109,7 @@ if __name__ == '__main__':
     np.random.seed(1)
     root = r'D:\Code\Github\python\text_clustering\data'
     stop_word_path = r'D:\Code\Github\python\text_clustering\stopped_words.txt'
-    for file in list_all_files(root, keys=['hefei']):
+    for file in list_all_files(root, keys=['article']):
         print(file)
         with open(file, 'r', encoding='utf-8') as f:
             rows = f.readlines()
@@ -122,6 +122,7 @@ if __name__ == '__main__':
     num_all_words = 0
     rows = rows[:len(rows) // 2]
     for ri, r in enumerate(rows):
+        # if ri % 8 != 0: continue
         if ri % 1000 == 0:
             print(ri, len(rows))
         content = r.strip(' ').replace('\r', '').replace('\n', '')
