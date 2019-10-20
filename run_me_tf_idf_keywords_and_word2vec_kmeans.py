@@ -8,6 +8,7 @@ import codecs
 import collections
 import functools
 import os
+import random
 import time
 
 import jieba.analyse
@@ -20,7 +21,7 @@ from gensim.models.word2vec import LineSentence
 from sklearn.cluster import KMeans
 # from sklearn.decomposition import PCA
 from sklearn.decomposition import TruncatedSVD
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, HashingVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.manifold import TSNE
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import Normalizer
@@ -108,7 +109,7 @@ if __name__ == '__main__':
     np.random.seed(1)
     root = r'D:\Code\Github\python\text_clustering\data'
     stop_word_path = r'D:\Code\Github\python\text_clustering\stopped_words.txt'
-    for file in list_all_files(root, keys=['article']):
+    for file in list_all_files(root, keys=['hefei']):
         print(file)
         with open(file, 'r', encoding='utf-8') as f:
             rows = f.readlines()
@@ -140,14 +141,9 @@ if __name__ == '__main__':
 
     import random
     cor = random.sample(corpus, 50000)
-    # vectorizer = CountVectorizer()
-    # transformer = TfidfTransformer()
-    # hasher =HashingVectorizer()
-    # tfidf = transformer.fit_transform(vectorizer.fit_transform(corpus))
-    vectorizer = make_pipeline(
-        CountVectorizer(), TfidfTransformer(), HashingVectorizer()
-    )
-    tfidf = vectorizer.fit_transform(cor)
+    vectorizer = CountVectorizer()
+    transformer = TfidfTransformer()
+    tfidf = transformer.fit_transform(vectorizer.fit_transform(cor))
     all_words = vectorizer.get_feature_names()
     print("word feature length: {}".format(len(all_words)))
     svd = TruncatedSVD(MAX_NUM_FEATURES)
