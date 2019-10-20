@@ -8,7 +8,6 @@ import codecs
 import collections
 import functools
 import os
-import random
 import time
 
 import jieba.analyse
@@ -21,7 +20,7 @@ from gensim.models.word2vec import LineSentence
 from sklearn.cluster import KMeans
 # from sklearn.decomposition import PCA
 from sklearn.decomposition import TruncatedSVD
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, HashingVectorizer
 from sklearn.manifold import TSNE
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import Normalizer
@@ -33,7 +32,7 @@ KEY_WORD_TFIDF_THD = 0.28
 FREQ_THD = 0.00001
 USE_TFIDF = True
 USE_FREQ = True
-MAX_NUM_FEATURES = 100
+MAX_NUM_FEATURES = 1000
 
 
 def func_timer(func):
@@ -131,7 +130,7 @@ if __name__ == '__main__':
         # words = jieba.analyse.textrank(content, topK=30, withWeight=False, allowPOS=('ns', 'n', 'vn'))
         split_str = ''
         for word in words:
-            if len(word) > 1 and word not in stopwords and not any([d in word for d in '0123456789']):
+            if len(word) > 1 and word not in stopwords and not any([d in word for d in '0123456789一二三四五六七八九']):
                 counter_dict[word] += 1
                 num_all_words += 1
                 whole_words[-1].append(word)
@@ -139,11 +138,16 @@ if __name__ == '__main__':
         if split_str:
             corpus.append(split_str)
 
-    # import random
-    # cor = random.sample(corpus, 50000)
-    vectorizer = CountVectorizer()
-    transformer = TfidfTransformer()
-    tfidf = transformer.fit_transform(vectorizer.fit_transform(corpus))
+    import random
+    cor = random.sample(corpus, 50000)
+    # vectorizer = CountVectorizer()
+    # transformer = TfidfTransformer()
+    # hasher =HashingVectorizer()
+    # tfidf = transformer.fit_transform(vectorizer.fit_transform(corpus))
+    vectorizer = make_pipeline(
+        CountVectorizer(), TfidfTransformer(), HashingVectorizer()
+    )
+    tfidf = vectorizer.fit_transform(cor)
     all_words = vectorizer.get_feature_names()
     print("word feature length: {}".format(len(all_words)))
     svd = TruncatedSVD(MAX_NUM_FEATURES)
